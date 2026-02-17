@@ -1,0 +1,39 @@
+#compdef gw
+# Zsh completion for gw (Git Worktree Switcher)
+# Place in your fpath (e.g. ~/.zsh/completions/_gw)
+
+_gw() {
+  local -a commands worktrees branches
+
+  commands=(
+    'ls:List all worktrees'
+    'add:Create a new worktree'
+    'rm:Remove a worktree'
+    'help:Show help'
+  )
+
+  # Get worktree names
+  worktrees=(${(f)"$(git worktree list --porcelain 2>/dev/null | awk '/^worktree / { path=substr($0,10); n=path; gsub(/.*\//, "", n); print n }')"})
+
+  if (( CURRENT == 2 )); then
+    # First argument: subcommands + worktree names (for quick switch)
+    _alternative \
+      'commands:command:_describe "command" commands' \
+      'worktrees:worktree:compadd -a worktrees'
+    return
+  fi
+
+  case "${words[2]}" in
+    add|new)
+      # Complete with branch names
+      branches=(${(f)"$(git for-each-ref --format='%(refname:short)' refs/heads/ 2>/dev/null)"})
+      _describe 'branch' branches
+      ;;
+    rm|remove|delete)
+      # Complete with worktree names
+      _describe 'worktree' worktrees
+      ;;
+  esac
+}
+
+_gw "$@"
